@@ -12,9 +12,32 @@ class MoviesController < ApplicationController
 
   def index
     @all_ratings = Movie.all_ratings
-    @checked_ratings = params.key?(:ratings) ? params[:ratings].keys : @all_ratings
-    @movies = Movie.where("rating IN (?)", @checked_ratings)
+    @checked_ratings = @all_ratings
+    redirect_flag = false
     
+    #set correct params
+    if ((not params.key?(:sort_by)) and session.key?(:sort_by))
+      params[:sort_by] = session[:sort_by]
+      redirect_flag = true
+    end
+    if ((not params.key?(:ratings)) and session.key?(:ratings))
+      params[:ratings] = session[:ratings]
+      redirect_flag = true
+    end
+    
+    #set correct session
+    session[:sort_by] = params[:sort_by]
+    session[:ratings] = params[:ratings]
+    
+    #redirect if needed to be restful
+    if redirect_flag
+      flash.keep
+      redirect_to movies_path params
+    end
+    
+    #set correct instance variables
+    @checked_ratings = params[:ratings].keys if params.key?(:ratings)
+    @movies = Movie.where("rating IN (?)", @checked_ratings)
     case params[:sort_by]
     when 'title'
       @movies.order!("title")
